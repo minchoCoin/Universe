@@ -248,8 +248,13 @@ class LiteRtChatRepository(
     }
 
     suspend fun closeConversation() = withContext(Dispatchers.IO) {
-        currentConversation?.close()
+        val conversation = currentConversation ?: return@withContext
         currentConversation = null
+        try {
+            conversation.close()
+        } catch (_: IllegalStateException) {
+            // LiteRT-LM throws if the same conversation is closed twice.
+        }
     }
 
     suspend fun closeEngine() = withContext(Dispatchers.IO) {
