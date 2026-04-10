@@ -23,10 +23,12 @@ import com.eslab.universe.worker.ModelDownloadWorker
 import com.google.ai.edge.litertlm.Backend
 import com.google.ai.edge.litertlm.Conversation
 import com.google.ai.edge.litertlm.ConversationConfig
+import com.google.ai.edge.litertlm.Contents
 import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
 import com.google.ai.edge.litertlm.LogSeverity
 import com.google.ai.edge.litertlm.Message
+import com.google.ai.edge.litertlm.SamplerConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
@@ -37,6 +39,13 @@ import java.util.UUID
 data class ChatHistoryMessage(
     val role: ChatRole,
     val text: String,
+)
+
+data class ConversationSettings(
+    val topK: Int = 64,
+    val topP: Double = 0.95,
+    val temperature: Double = 1.00,
+    val systemInstruction: String = "You are a helpful assistant.",
 )
 
 enum class ChatRole {
@@ -195,36 +204,24 @@ class LiteRtChatRepository(
             Engine.setNativeMinLogSeverity(LogSeverity.ERROR)
 
             val modelPath = modelFile(model).absolutePath
-            val gpuConfig = EngineConfig(
+            val cpuConfig = EngineConfig(
                 modelPath = modelPath,
-                backend = Backend.GPU(),
+                backend = Backend.CPU(),
                 cacheDir = appContext.cacheDir.absolutePath,
             )
-
-            try {
-                val initializedEngine = Engine(gpuConfig)
-                initializedEngine.initialize()
-                engine = initializedEngine
-                currentModelId = model.id
-                currentBackend = "GPU"
-                "GPU"
-            } catch (_: Throwable) {
-                val cpuConfig = EngineConfig(
-                    modelPath = modelPath,
-                    backend = Backend.CPU(),
-                    cacheDir = appContext.cacheDir.absolutePath,
-                )
-                val initializedEngine = Engine(cpuConfig)
-                initializedEngine.initialize()
-                engine = initializedEngine
-                currentModelId = model.id
-                currentBackend = "CPU"
-                "CPU"
-            }
+            val initializedEngine = Engine(cpuConfig)
+            initializedEngine.initialize()
+            engine = initializedEngine
+            currentModelId = model.id
+            currentBackend = "CPU"
+            "CPU"
         }
     }
 
-    suspend fun selectConversation(history: List<ChatHistoryMessage>): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun selectConversation(
+        history: List<ChatHistoryMessage>,
+        settings: ConversationSettings,
+    ): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             val activeEngine = engine ?: error("The engine is not initialized.")
             closeConversation()
@@ -236,7 +233,13 @@ class LiteRtChatRepository(
             }
             currentConversation = activeEngine.createConversation(
                 ConversationConfig(
+                    systemInstruction = Contents.of(settings.systemInstruction),
                     initialMessages = initialMessages,
+                    samplerConfig = SamplerConfig(
+                        topK = settings.topK,
+                        topP = settings.topP,
+                        temperature = settings.temperature,
+                    ),
                 ),
             )
         }

@@ -23,6 +23,7 @@ import com.eslab.universe.data.DownloadableModel
 import com.eslab.universe.ui.UniverseUiState
 import com.eslab.universe.ui.component.ChatComposer
 import com.eslab.universe.ui.component.ChatMessageList
+import com.eslab.universe.ui.component.GenerationSettingsDialog
 import com.eslab.universe.ui.component.HistoryDrawerContent
 import com.eslab.universe.ui.component.ModelPickerDialog
 import com.eslab.universe.ui.component.StatusStrip
@@ -41,6 +42,9 @@ fun UniverseScreen(
     onSelectModel: (DownloadableModel) -> Unit,
     onDownloadModel: (DownloadableModel) -> Unit,
     onShowModelPicker: () -> Unit,
+    onShowGenerationSettings: () -> Unit,
+    onHideGenerationSettings: () -> Unit,
+    onUpdateConversationSettings: (Int, Double, Double, String) -> Unit,
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -70,6 +74,7 @@ fun UniverseScreen(
                     selectedModelName = uiState.selectedModel?.displayName,
                     onOpenHistory = { scope.launch { drawerState.open() } },
                     onShowModelPicker = onShowModelPicker,
+                    onShowGenerationSettings = onShowGenerationSettings,
                 )
             },
             bottomBar = {
@@ -123,6 +128,14 @@ fun UniverseScreen(
                         isEngineLoading = uiState.isEngineLoading,
                         onDownloadModel = onDownloadModel,
                         onSelectModel = onSelectModel,
+                    )
+                }
+
+                if (uiState.isGenerationSettingsVisible) {
+                    GenerationSettingsDialog(
+                        settings = uiState.conversationSettings,
+                        onDismiss = onHideGenerationSettings,
+                        onSave = onUpdateConversationSettings,
                     )
                 }
             }

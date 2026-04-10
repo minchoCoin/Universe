@@ -3,6 +3,7 @@ package com.eslab.universe.ui.component
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -18,6 +19,7 @@ fun UniverseTopBar(
     selectedModelName: String?,
     onOpenHistory: () -> Unit,
     onShowModelPicker: () -> Unit,
+    onShowGenerationSettings: () -> Unit,
 ) {
     TopAppBar(
         title = {
@@ -39,6 +41,12 @@ fun UniverseTopBar(
             }
         },
         actions = {
+            IconButton(onClick = onShowGenerationSettings) {
+                Icon(
+                    imageVector = Icons.Default.Tune,
+                    contentDescription = "Open generation settings",
+                )
+            }
             OutlinedButton(onClick = onShowModelPicker) {
                 Text(text = "Model")
             }

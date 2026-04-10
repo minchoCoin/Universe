@@ -16,19 +16,19 @@ data class DownloadableModel(
 )
 
 object ModelCatalog {
-    val qwen35_08bLiteRt = DownloadableModel(
-        id = "qwen35-0-8b-litert",
-        displayName = "Qwen3.5 0.8B LiteRT",
-        repoId = "GabrieleConte/Qwen3.5-0.8B-LiteRT",
+    val qwen25_15bInstruct = DownloadableModel(
+        id = "qwen25-1-5b-instruct",
+        displayName = "Qwen2.5 1.5B Instruct",
+        repoId = "litert-community/Qwen2.5-1.5B-Instruct",
         version = "main",
-        storageDirName = "qwen35-0-8b-litert",
-        fileName = "qwen35_mm_q8_ekv2048.litertlm",
-        sizeLabel = "~1.2 GB",
-        sizeBytes = 1_200L * 1024L * 1024L,
-        summary = "A multimodal LiteRT-LM bundle based on Qwen3.5-0.8B.",
-        downloadUrl = "https://huggingface.co/GabrieleConte/Qwen3.5-0.8B-LiteRT/resolve/main/qwen35_mm_q8_ekv2048.litertlm?download=true",
-        modelPageUrl = "https://huggingface.co/GabrieleConte/Qwen3.5-0.8B-LiteRT",
+        storageDirName = "qwen25-1-5b-instruct",
+        fileName = "Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm",
+        sizeLabel = "Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm",
+        sizeBytes = 0L,
+        summary = "A LiteRT-LM bundle based on Qwen2.5-1.5B-Instruct.",
+        downloadUrl = "https://huggingface.co/litert-community/Qwen2.5-1.5B-Instruct/resolve/main/Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm?download=true",
+        modelPageUrl = "https://huggingface.co/litert-community/Qwen2.5-1.5B-Instruct",
     )
 
-    val all = listOf(qwen35_08bLiteRt)
+    val all = listOf(qwen25_15bInstruct)
 }

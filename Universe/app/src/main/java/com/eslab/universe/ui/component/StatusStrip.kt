@@ -1,7 +1,6 @@
 package com.eslab.universe.ui.component
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -31,19 +30,16 @@ fun StatusStrip(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
+            Text(
+                text = statusMessage,
+                style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier
-                    .weight(1f, fill = true)
+                    .fillMaxWidth(0.85f)
                     .padding(end = 12.dp),
-            ) {
-                Text(
-                    text = statusMessage,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
+            )
             if (backend != null) {
                 Text(
                     text = backend,

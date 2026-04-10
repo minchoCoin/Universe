@@ -6,12 +6,14 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.eslab.universe.data.ChatHistoryMessage
 import com.eslab.universe.data.ChatRole
+import com.eslab.universe.data.ConversationSettings
 import com.eslab.universe.data.DownloadableModel
 import com.eslab.universe.data.LiteRtChatRepository
 import com.eslab.universe.data.ModelDownloadStatusType
 import com.eslab.universe.data.ModelCatalog
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -60,6 +62,8 @@ data class UniverseUiState(
     val isGenerating: Boolean = false,
     val statusMessage: String = "Select a model to start chatting.",
     val downloadState: DownloadState = DownloadState(),
+    val conversationSettings: ConversationSettings = ConversationSettings(),
+    val isGenerationSettingsVisible: Boolean = false,
 )
 
 class UniverseViewModel(
@@ -74,6 +78,7 @@ class UniverseViewModel(
     val uiState: StateFlow<UniverseUiState> = _uiState.asStateFlow()
 
     private var generationJob: Job? = null
+    private var conversationCleanupJob: Job? = null
 
     fun updateDraftMessage(text: String) {
         _uiState.update { it.copy(draftMessage = text) }
@@ -111,7 +116,10 @@ class UniverseViewModel(
 
             repository.initializeModel(model)
                 .onSuccess { backend ->
-                    repository.selectConversation(currentActiveSession().toHistory())
+                    repository.selectConversation(
+                        currentActiveSession().toHistory(),
+                        _uiState.value.conversationSettings,
+                    )
                         .onSuccess {
                             _uiState.update {
                                 it.copy(
@@ -144,6 +152,34 @@ class UniverseViewModel(
 
     fun showModelPicker() {
         _uiState.update { it.copy(isModelPickerVisible = true) }
+    }
+
+    fun showGenerationSettings() {
+        _uiState.update { it.copy(isGenerationSettingsVisible = true) }
+    }
+
+    fun hideGenerationSettings() {
+        _uiState.update { it.copy(isGenerationSettingsVisible = false) }
+    }
+
+    fun updateConversationSettings(
+        topK: Int,
+        topP: Double,
+        temperature: Double,
+        systemInstruction: String,
+    ) {
+        _uiState.update {
+            it.copy(
+                conversationSettings = ConversationSettings(
+                    topK = topK,
+                    topP = topP,
+                    temperature = temperature,
+                    systemInstruction = systemInstruction,
+                ),
+                isGenerationSettingsVisible = false,
+                statusMessage = "Generation settings updated.",
+            )
+        }
     }
 
     fun downloadModel(model: DownloadableModel) {
@@ -215,7 +251,13 @@ class UniverseViewModel(
         generationJob = viewModelScope.launch {
             var generationFailed = false
             var generationStopped = false
-            repository.selectConversation(session.toHistory())
+            conversationCleanupJob?.join()
+            conversationCleanupJob = null
+            prepareConversation(
+                model = state.selectedModel,
+                history = session.toHistory(),
+                settings = state.conversationSettings,
+            )
                 .onFailure { error ->
                     _uiState.update {
                         it.copy(statusMessage = error.message ?: "Failed to prepare the chat.")
@@ -299,17 +341,19 @@ class UniverseViewModel(
     }
 
     fun stopGeneration() {
-        generationJob?.cancel()
+        _uiState.update {
+            it.copy(
+                isGenerating = false,
+                statusMessage = "Response stopped.",
+            )
+        }
+        val activeGenerationJob = generationJob
+        activeGenerationJob?.cancel()
         generationJob = null
-        viewModelScope.launch {
+        conversationCleanupJob?.cancel()
+        conversationCleanupJob = viewModelScope.launch {
+            activeGenerationJob?.cancelAndJoin()
             repository.closeConversation()
-            repository.selectConversation(currentActiveSession().toHistory())
-            _uiState.update {
-                it.copy(
-                    isGenerating = false,
-                    statusMessage = "Response stopped.",
-                )
-            }
         }
     }
 
@@ -318,8 +362,30 @@ class UniverseViewModel(
         return state.sessions.first { it.id == state.activeSessionId }
     }
 
+    private suspend fun prepareConversation(
+        model: DownloadableModel,
+        history: List<ChatHistoryMessage>,
+        settings: ConversationSettings,
+    ): Result<Unit> {
+        val initialAttempt = repository.selectConversation(history, settings)
+        val message = initialAttempt.exceptionOrNull()?.message.orEmpty()
+        if (!message.contains("A session already exists", ignoreCase = true)) {
+            return initialAttempt
+        }
+
+        repository.closeEngine()
+        return repository.initializeModel(model).fold(
+            onSuccess = { backend ->
+                _uiState.update { it.copy(activeBackend = backend) }
+                repository.selectConversation(history, settings)
+            },
+            onFailure = { Result.failure(it) },
+        )
+    }
+
     override fun onCleared() {
         generationJob?.cancel()
+        conversationCleanupJob?.cancel()
         viewModelScope.launch {
             repository.shutdown()
         }

@@ -20,5 +20,8 @@ fun UniverseApp(
         onSelectModel = viewModel::selectModel,
         onDownloadModel = viewModel::downloadModel,
         onShowModelPicker = viewModel::showModelPicker,
+        onShowGenerationSettings = viewModel::showGenerationSettings,
+        onHideGenerationSettings = viewModel::hideGenerationSettings,
+        onUpdateConversationSettings = viewModel::updateConversationSettings,
     )
 }
