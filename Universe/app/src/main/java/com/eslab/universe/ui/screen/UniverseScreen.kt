@@ -124,6 +124,8 @@ fun UniverseScreen(
                         selectedModel = uiState.selectedModel,
                         isDownloading = uiState.downloadState.isDownloading,
                         progress = uiState.downloadState.progress,
+                        receivedBytes = uiState.downloadState.receivedBytes,
+                        totalBytes = uiState.downloadState.totalBytes,
                         downloadError = uiState.downloadState.errorMessage,
                         isEngineLoading = uiState.isEngineLoading,
                         onDownloadModel = onDownloadModel,

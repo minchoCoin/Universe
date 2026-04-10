@@ -31,6 +31,7 @@ data class UiChatMessage(
     val id: String = UUID.randomUUID().toString(),
     val role: ChatRole,
     val text: String,
+    val elapsedMs: Long? = null,
 )
 
 data class DownloadState(
@@ -251,6 +252,7 @@ class UniverseViewModel(
         generationJob = viewModelScope.launch {
             var generationFailed = false
             var generationStopped = false
+            val generationStartedAtMs = System.currentTimeMillis()
             conversationCleanupJob?.join()
             conversationCleanupJob = null
             prepareConversation(
@@ -329,10 +331,23 @@ class UniverseViewModel(
             }
 
             if (!generationFailed) {
+                val elapsedMs = (System.currentTimeMillis() - generationStartedAtMs).coerceAtLeast(1L)
                 _uiState.update {
                     it.copy(
                         isGenerating = false,
                         statusMessage = if (generationStopped) "Response stopped." else "Response completed.",
+                        sessions = it.sessions.updateSession(session.id) { current ->
+                            val updatedMessages = current.messages.map { chatMessage ->
+                                if (chatMessage.id == placeholder.id) {
+                                    chatMessage.copy(
+                                        elapsedMs = elapsedMs,
+                                    )
+                                } else {
+                                    chatMessage
+                                }
+                            }
+                            current.copy(messages = updatedMessages)
+                        },
                     )
                 }
             }

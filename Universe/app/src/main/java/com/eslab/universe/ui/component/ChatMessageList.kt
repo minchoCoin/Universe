@@ -27,6 +27,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.eslab.universe.data.ChatRole
 import com.eslab.universe.ui.UiChatMessage
+import java.util.Locale
 
 @Composable
 fun ChatMessageList(
@@ -83,13 +84,29 @@ fun ChatMessageList(
                     color = if (message.role == ChatRole.USER) Color(0xFF24588A) else Color(0xFF142231),
                     tonalElevation = 2.dp,
                 ) {
-                    Text(
-                        text = message.text.ifBlank { "..." },
+                    Column(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                        color = Color(0xFFF3F7FB),
-                    )
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text(
+                            text = message.text.ifBlank { "..." },
+                            color = Color(0xFFF3F7FB),
+                        )
+                        if (message.role == ChatRole.ASSISTANT && message.elapsedMs != null) {
+                            Text(
+                                text = formatAssistantElapsedTime(message.elapsedMs),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color(0xFFA7B6C6),
+                            )
+                        }
+                    }
                 }
             }
         }
     }
+}
+
+private fun formatAssistantElapsedTime(elapsedMs: Long): String {
+    val seconds = elapsedMs / 1000.0
+    return String.format(Locale.US, "%.2fs", seconds)
 }

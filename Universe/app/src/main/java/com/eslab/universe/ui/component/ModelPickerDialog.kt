@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.eslab.universe.data.DownloadableModel
+import java.util.Locale
 
 @Composable
 fun ModelPickerDialog(
@@ -39,6 +40,8 @@ fun ModelPickerDialog(
     selectedModel: DownloadableModel?,
     isDownloading: Boolean,
     progress: Float?,
+    receivedBytes: Long,
+    totalBytes: Long,
     downloadError: String?,
     isEngineLoading: Boolean,
     onDownloadModel: (DownloadableModel) -> Unit,
@@ -112,6 +115,15 @@ fun ModelPickerDialog(
                                     progress = { progress ?: 0f },
                                     modifier = Modifier.fillMaxWidth(),
                                 )
+                                Text(
+                                    text = formatDownloadProgress(
+                                        receivedBytes = receivedBytes,
+                                        totalBytes = totalBytes,
+                                        progress = progress,
+                                    ),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
                             if (downloadError != null) {
                                 Text(
@@ -166,5 +178,27 @@ fun ModelPickerDialog(
             }
         },
         confirmButton = {},
+    )
+}
+
+private fun formatDownloadProgress(
+    receivedBytes: Long,
+    totalBytes: Long,
+    progress: Float?,
+): String {
+    val receivedMb = receivedBytes / 1024f / 1024f
+    if (totalBytes <= 0L) {
+        return String.format(Locale.US, "%.1f MB downloaded", receivedMb)
+    }
+
+    val totalMb = totalBytes / 1024f / 1024f
+    val percent = ((progress ?: (receivedBytes.toFloat() / totalBytes.toFloat())) * 100f)
+        .coerceIn(0f, 100f)
+    return String.format(
+        Locale.US,
+        "%.1f MB / %.1f MB (%.1f%%)",
+        receivedMb,
+        totalMb,
+        percent,
     )
 }
