@@ -13,10 +13,12 @@ fun UniverseApp(
     UniverseScreen(
         uiState = uiState,
         onDraftChange = viewModel::updateDraftMessage,
+        onAppendTranscript = viewModel::appendDraftTranscript,
         onSend = viewModel::sendMessage,
         onStop = viewModel::stopGeneration,
         onNewChat = viewModel::createNewChat,
         onSelectChat = viewModel::selectChat,
+        onDeleteChat = viewModel::deleteChat,
         onSelectModel = viewModel::selectModel,
         onDownloadModel = viewModel::downloadModel,
         onShowModelPicker = viewModel::showModelPicker,

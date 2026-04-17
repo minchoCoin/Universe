@@ -85,6 +85,16 @@ class UniverseViewModel(
         _uiState.update { it.copy(draftMessage = text) }
     }
 
+    fun appendDraftTranscript(text: String) {
+        val transcript = text.trim()
+        if (transcript.isBlank()) return
+
+        _uiState.update { state ->
+            val separator = if (state.draftMessage.isBlank()) "" else " "
+            state.copy(draftMessage = state.draftMessage + separator + transcript)
+        }
+    }
+
     fun createNewChat() {
         val sessionId = UUID.randomUUID().toString()
         val session = ChatSession(
@@ -103,6 +113,30 @@ class UniverseViewModel(
 
     fun selectChat(sessionId: String) {
         _uiState.update { it.copy(activeSessionId = sessionId) }
+    }
+
+    fun deleteChat(sessionId: String) {
+        val currentState = _uiState.value
+        if (currentState.sessions.size <= 1) {
+            _uiState.update { it.copy(statusMessage = "At least one chat must remain.") }
+            return
+        }
+
+        val updatedSessions = currentState.sessions.filterNot { it.id == sessionId }
+        val nextActiveSessionId =
+            if (currentState.activeSessionId == sessionId) {
+                updatedSessions.first().id
+            } else {
+                currentState.activeSessionId
+            }
+
+        _uiState.update {
+            it.copy(
+                sessions = updatedSessions,
+                activeSessionId = nextActiveSessionId,
+                statusMessage = "Chat deleted.",
+            )
+        }
     }
 
     fun selectModel(model: DownloadableModel) {

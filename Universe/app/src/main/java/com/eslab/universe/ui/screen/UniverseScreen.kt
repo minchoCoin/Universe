@@ -35,10 +35,12 @@ import kotlinx.coroutines.launch
 fun UniverseScreen(
     uiState: UniverseUiState,
     onDraftChange: (String) -> Unit,
+    onAppendTranscript: (String) -> Unit,
     onSend: () -> Unit,
     onStop: () -> Unit,
     onNewChat: () -> Unit,
     onSelectChat: (String) -> Unit,
+    onDeleteChat: (String) -> Unit,
     onSelectModel: (DownloadableModel) -> Unit,
     onDownloadModel: (DownloadableModel) -> Unit,
     onShowModelPicker: () -> Unit,
@@ -64,6 +66,10 @@ fun UniverseScreen(
                     onSelectChat(sessionId)
                     scope.launch { drawerState.close() }
                 },
+                onDeleteChat = { sessionId ->
+                    onDeleteChat(sessionId)
+                    scope.launch { drawerState.close() }
+                },
             )
         },
     ) {
@@ -83,6 +89,7 @@ fun UniverseScreen(
                     enabled = !uiState.isGenerating && uiState.selectedModel != null && !uiState.isEngineLoading,
                     isGenerating = uiState.isGenerating,
                     onValueChange = onDraftChange,
+                    onTranscript = onAppendTranscript,
                     onSend = onSend,
                     onStop = onStop,
                 )
